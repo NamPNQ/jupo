@@ -2474,7 +2474,6 @@ $(document).ready(function(e) {
     var _this = $(this);
     var _boxchat = _this.parents('.chatbox');
     
-    
     $('textarea.mentions', _this).attr('readonly', 'readonly')
     $('form', _boxchat).addClass('gray-bg')
     
@@ -2482,9 +2481,11 @@ $(document).ready(function(e) {
     $('textarea.mentions', _this).mentionsInput('val', function(text) {
       $('textarea.marked-up', _this).val(text);
     });
-    var _tmp = $('<li class="message" id="_tmpchat'+$(this)[0].action+'" > \
+
+    var _tmpid = Math.random().toString(36).substr(2);
+    var _tmp = $('<li class="message" id="tmpchat'+_tmpid+'" > \
                   <div class="ts"></div>    \
-                  <a href="#" title="" class="async lfloat">\
+                  <a href="#" title="" class="lfloat">\
                     <img class="small-avatar" src="/public/images/icons/sending.gif">   \
                   </a>      \
                   <div class="content">\
@@ -2492,20 +2493,33 @@ $(document).ready(function(e) {
                   </div>\
                 </li>');
     $('.messages', _boxchat).append(_tmp);
+    var _data = $(this).serialize()+"&_tmpid="+_tmpid;
     setTimeout(function() {
               $('.messages', _boxchat).scrollTop(99999);
             }, 10);
+    //Unlock and reset box chat
+    $('div.status', _boxchat).fadeOut('fast');
+    $('form', _boxchat).removeClass('gray-bg');
+    $('textarea.mentions', _this).attr("readonly", false);
+    $('textarea.mentions', _this).attr('placeholder', "Write a message...").val('').focus();
+    $("textarea.mentions", _this).css('height', "");
+    $("ul.messages", _boxchat).css('height', "");
+    $('div.status', _boxchat).css('bottom', "");
+    
+    $("textarea.mentions", _this).mentionsInput('reset');
+        
+    $('input[name="codeblock"]', _this).val('');
     $.ajax({
       type: "POST",
       headers: {
         'X-CSRFToken': get_cookie('_csrf_token')
       },
       url: $(this).attr('action'),
-      data: $(this).serializeArray(),
+      data: _data,
       dataType: "html",
       success: function(data) {
+        /*        
         $('div.status', _boxchat).fadeOut('fast');
-
         $('form', _boxchat).removeClass('gray-bg');
         $('textarea.mentions', _this).attr("readonly", false);
         $('textarea.mentions', _this).attr('placeholder', "Write a message...").val('').focus();
@@ -2516,16 +2530,17 @@ $(document).ready(function(e) {
         $("textarea.mentions", _this).mentionsInput('reset');
         
         $('input[name="codeblock"]', _this).val('');
-        
+        */
         if (data != '') {
-          _tmp.remove();
+          var _rep_tmpid = $(data).attr('data-tmp-id');
+          $('#tmpchat'+_rep_tmpid).remove();
           var msg = $(data);
   
           var msg_id = msg.attr('id').split('-')[1];
           var msg_ts = msg.data('ts');
           var sender_id = msg.attr('data-sender-id');
           
-          var last_msg = $('li.message:last', _boxchat);
+          var last_msg = $('li.message[id^=message]:last', _boxchat);
           
           if (last_msg.length == 0 || last_msg.attr('data-msg-ids').indexOf(msg_id) == -1) {
             if (last_msg.length != 0 && $('> a > img.small-avatar', last_msg).length != 0 && msg_ts - last_msg.data('ts') < 120 && last_msg.attr('data-sender-id') == sender_id) {
@@ -2536,8 +2551,7 @@ $(document).ready(function(e) {
               
             } else {
               $('.messages', _boxchat).append(data);
-              
-              $('#chat-' + chat_id + " .messages li.message:last a.async").tipsy({
+              $('#chat-' + chat_id + " .messages li.message[id^=message]:last a.async").tipsy({
                 gravity: 'e'
               });
               
@@ -2564,6 +2578,10 @@ $(document).ready(function(e) {
           _tmp.wrap('<s />');
         }
         
+      },
+      error:function(){
+         $('img.small-avatar',_tmp).attr('src','/public/images/icons/agt_action_fail1.png');
+          _tmp.wrap('<s />');
       }
     });
     
