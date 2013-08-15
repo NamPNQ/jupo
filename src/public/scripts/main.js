@@ -2482,7 +2482,19 @@ $(document).ready(function(e) {
     $('textarea.mentions', _this).mentionsInput('val', function(text) {
       $('textarea.marked-up', _this).val(text);
     });
-    
+    var _tmp = $('<li class="message" id="_tmpchat'+$(this)[0].action+'" > \
+                  <div class="ts"></div>    \
+                  <a href="#" title="" class="async lfloat">\
+                    <img class="small-avatar" src="/public/images/icons/sending.gif">   \
+                  </a>      \
+                  <div class="content">\
+                           '+$($(this)[0].message).val()+' \
+                  </div>\
+                </li>');
+    $('.messages', _boxchat).append(_tmp);
+    setTimeout(function() {
+              $('.messages', _boxchat).scrollTop(99999);
+            }, 10);
     $.ajax({
       type: "POST",
       headers: {
@@ -2506,6 +2518,7 @@ $(document).ready(function(e) {
         $('input[name="codeblock"]', _this).val('');
         
         if (data != '') {
+          _tmp.remove();
           var msg = $(data);
   
           var msg_id = msg.attr('id').split('-')[1];
@@ -2545,6 +2558,10 @@ $(document).ready(function(e) {
           // highlight code snippets
           prettyPrint()
               
+        }else
+        {
+          $('img.small-avatar',_tmp).attr('src','/public/images/icons/agt_action_fail1.png');
+          _tmp.wrap('<s />');
         }
         
       }
